@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 			printf(" N  = Number of needles\n\n");
 		}
         MPI_Finalize();
-		return 0;
+		return -1;
 	}
 
 	const int Nx = atoi(argv[1]);

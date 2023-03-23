@@ -1,5 +1,5 @@
 ###############################################################################
-# Makefile for assignment 1, Parallel and Distributed Computing 2022.
+# Makefile for assignment 1, Parallel and Distributed Computing 2023.
 ###############################################################################
 
 CC = mpicc
