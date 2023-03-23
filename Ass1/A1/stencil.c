@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 	double my_execution_time = MPI_Wtime() - start;
 
 	// Write result
-	printf("%f\n", my_execution_time);
+	printf("Took %fs\n", my_execution_time);
 #ifdef PRODUCE_OUTPUT_FILE
 	if (0 != write_output(output_name, output, num_values)) {
 		return 2;

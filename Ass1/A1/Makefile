@@ -12,6 +12,9 @@ all: $(EXECUTABLE)
 
 stencil: stencil.c stencil.h
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+
+input_maker: filemaker.c
+	gcc -O3 -march=native -o $@ $< $(LIBS)
 	
 clean:
-	$(RM) $(EXECUTABLE)
+	$(RM) $(EXECUTABLE) input_maker
