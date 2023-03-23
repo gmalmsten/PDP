@@ -2,12 +2,19 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # Read the data from the file
-# Read from file in subfolder
-input = np.loadtxt('input_file.txt', dtype=float, delimiter=' ')
-output = np.loadtxt('out.txt', dtype=float, delimiter=' ')
 
+# Get the current working directory
+dir_path = os.getcwd()
+
+# Join the file name to the path
+input_file = os.path.join(dir_path, 'input_file.txt')
+output_file = os.path.join(dir_path, 'out.txt')
+
+input = np.loadtxt(input_file, dtype=float, delimiter=' ')
+output = np.loadtxt(output_file, dtype=float, delimiter=' ')
 input = input[1:]
 
 fig, ax = plt.subplots()
