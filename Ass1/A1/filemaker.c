@@ -32,11 +32,11 @@ int main(int argc, char *argv[]){
 		perror("Couldn't open output file");
 		return -1;
 	}
-    fprintf(file, "%.4f ", N);
+    fprintf(file, "%d ", (int)N);
 
     for (int i = 0; i < N; i++) {
         double value = func(x[i]);
-		if (0 > fprintf(file, "%.4f ", value)) {
+		if (0 > fprintf(file, "%f ", value)) {
 			perror("Couldn't write to output file");
 		}
 	}
