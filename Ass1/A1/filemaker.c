@@ -15,12 +15,10 @@ int main(int argc, char *argv[]){
 
     const int N = atof(argv[1]);
     char *output_file = argv[2];
+    int p = (N/1000);
     
-    // if(p<1){
-    //     p=1;
-    // }
 
-    const double dx = (2*PI)/(N-1);
+    const double dx = (p*2*PI)/(N-1);
     printf("dx: %.4lf\n", dx);
 
     double *x = (double *)malloc(N * sizeof(double));
