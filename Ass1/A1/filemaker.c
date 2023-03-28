@@ -38,12 +38,12 @@ int main(int argc, char *argv[]){
 
     for (int i = 0; i < N-1; i++) {
         double value = func(x[i]);
-		if (0 > fprintf(file, "%.4f ", value)) {
+		if (0 > fprintf(file, "%lf ", value)) {
 			perror("Couldn't write to output file");
 		}
 	}
     double value = func(x[N-1]);
-    if(0 > fprintf(file, "%.4f", value)) {
+    if(0 > fprintf(file, "%lf", value)) {
 			perror("Couldn't write to output file");
 		}
 	if (0 > fprintf(file, "\n")) {
