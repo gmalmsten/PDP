@@ -19,6 +19,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Read function data from an input file and store in an array. The input file
