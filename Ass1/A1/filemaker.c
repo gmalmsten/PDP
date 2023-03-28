@@ -7,19 +7,21 @@
 
 int main(int argc, char *argv[]){
 
-    if(argc != 5){
-        printf("Usage %s N n file_ptr\n", argv[0]);
+    if(argc != 3){
+        printf("Usage %s N file_ptr\n", argv[0]);
         printf("Where:\nN is the number of datapoints\n");
-        printf("n is the number of periods\n");
         printf("file_ptr is a pointer to file to write to\n");
     }
 
-    const double N = atof(argv[1]);
-    const double n = atof(argv[2]);
-    char *output_file = argv[3];
+    const int N = atof(argv[1]);
+    char *output_file = argv[2];
+    int p = N/10000;
+    if(p<1){
+        p=1;
+    }
 
-    const double dx = (2*PI)/(N-1);
-    printf("dx: %lf\n", dx);
+    const double dx = (p*2*PI)/(N-1);
+    printf("dx: %.4lf\n", dx);
 
     double *x = (double *)malloc(N * sizeof(double));
     for(int i = 0; i < N; i++){
@@ -32,14 +34,18 @@ int main(int argc, char *argv[]){
 		perror("Couldn't open output file");
 		return -1;
 	}
-    fprintf(file, "%d ", (int)N);
+    fprintf(file, "%d ", N);
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N-1; i++) {
         double value = func(x[i]);
-		if (0 > fprintf(file, "%f ", value)) {
+		if (0 > fprintf(file, "%.4f ", value)) {
 			perror("Couldn't write to output file");
 		}
 	}
+    double value = func(x[N-1]);
+    if(0 > fprintf(file, "%.4f", value)) {
+			perror("Couldn't write to output file");
+		}
 	if (0 > fprintf(file, "\n")) {
 		perror("Couldn't write to output file");
 	}

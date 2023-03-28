@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 	double my_execution_time = MPI_Wtime() - start;
 
 	// Write result
-	printf("Took %fs\n", my_execution_time);
+	printf("%f\n", my_execution_time);
 #ifdef PRODUCE_OUTPUT_FILE
 	if (0 != write_output(output_name, output, num_values)) {
 		return 2;
@@ -119,13 +119,10 @@ int write_output(char *file_name, const double *output, int num_values) {
 		perror("Couldn't open output file");
 		return -1;
 	}
-	for (int i = 0; i < num_values-1; i++) {
+	for (int i = 0; i < num_values; i++) {
 		if (0 > fprintf(file, "%.4f ", output[i])) {
 			perror("Couldn't write to output file");
 		}
-	}
-	if (0 > fprintf(file, "%.4f", output[num_values])){
-		perror("Couldn't write to output file");
 	}
 	if (0 > fprintf(file, "\n")) {
 		perror("Couldn't write to output file");

@@ -19,8 +19,9 @@ input = input[1:]
 
 fig, ax = plt.subplots()
 ax.plot(input, 'b-', label='Input')
-ax.plot(output, 'r-', label='Output')
+# ax.plot(output, 'r-', label='Output')
 ax.set_xlabel('Time')
 ax.set_ylabel('Amplitude')
 ax.legend()
-plt.show()
+# plt.show()
+plt.savefig("Fig.png")
