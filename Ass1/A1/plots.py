@@ -1,9 +1,7 @@
 # Read files and plot the data
-
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-
 # Read the data from the file
 
 # Get the current working directory
@@ -19,9 +17,9 @@ input = input[1:]
 
 fig, ax = plt.subplots()
 ax.plot(input, 'b-', label='Input')
-# ax.plot(output, 'r-', label='Output')
+ax.plot(output, 'r-', label='Output')
 ax.set_xlabel('Time')
 ax.set_ylabel('Amplitude')
 ax.legend()
-# plt.show()
-plt.savefig("Fig.png")
+plt.show()
+# plt.savefig("Fig.png")
