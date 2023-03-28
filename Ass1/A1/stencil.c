@@ -1,5 +1,4 @@
 #include "stencil.h"
-#include <mpi.h>
 
 
 int main(int argc, char **argv) {
@@ -25,7 +24,17 @@ int main(int argc, char **argv) {
 	const double STENCIL[] = {1.0/(12*h), -8.0/(12*h), 0.0, 8.0/(12*h), -1.0/(12*h)};
 
 	// Start timer
+	MPI_Init(&argc, &argv);
+	int rank, right, left, num_proc;
+	MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
+	MPI_CART_CREATE(MPI_COMM_WORLD, 1, num_proc, 'true', 'true', MPI_COMM_WORLD);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Cart_shift(MPI_COMM_WORLD, 1, 1, &rank, right);
+	MPI_Cart_shift(MPI_COMM_WORLD, -1, 1, &rank, left);
+	printf("Rank: %d, Left: %d, Right: %d\n", rank, left, right);
 	double start = MPI_Wtime();
+
+	
 
 	// Allocate data for result
 	double *output;
