@@ -49,9 +49,7 @@ int main(int argc, char **argv) {
 	MPI_Cart_create(MPI_COMM_WORLD, 1, dims, periods, reorder, &CIRC_COMM);
 	MPI_Comm_rank(CIRC_COMM, &rank);
 	MPI_Cart_shift(CIRC_COMM, 0, -1, &right, &left);
-	
 
-	
 
 	// Allocate data for result
 	double *output;
