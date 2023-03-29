@@ -28,17 +28,18 @@ int main(int argc, char **argv) {
 	for(int i = 0; i< 20; i++) input_test[i] = (double)i;
 
 	// Start timer
+	double start = MPI_Wtime();
+	
+	// Initialize MPI and assign sub lists
 	MPI_Init(&argc, &argv);
 	int rank, right, left, num_proc;
 	MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	int chunkSz = num_values/num_proc;
-	chunkSz = 20/num_proc;
 	double * sub_list = (double *)malloc(chunkSz*sizeof(double));
-	memcpy(sub_list, &input_test[rank*chunkSz], chunkSz*sizeof(double));//----------------------------------------
-	for(int i = 0; i < chunkSz; i++){
-		printf("%lf, ", sub_list[i]);
-	}
+	memcpy(sub_list, &input[rank*chunkSz], chunkSz*sizeof(double));
+
+	// Create circular topology
 	MPI_Comm CIRC_COMM;
 	int dims[1];
 	int periods[1];
@@ -48,8 +49,7 @@ int main(int argc, char **argv) {
 	MPI_Cart_create(MPI_COMM_WORLD, 1, dims, periods, reorder, &CIRC_COMM);
 	MPI_Comm_rank(CIRC_COMM, &rank);
 	MPI_Cart_shift(CIRC_COMM, 0, -1, &right, &left);
-	printf("Rank: %d, Left: %d, Right: %d\n", rank, left, right);
-	double start = MPI_Wtime();
+	
 
 	
 
