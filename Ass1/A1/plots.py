@@ -8,7 +8,7 @@ import os
 dir_path = os.getcwd()
 
 # Join the file name to the path
-input_file = os.path.join(dir_path, 'input_file.txt')
+input_file = os.path.join(dir_path, 'ref_outputs\output96_1_ref.txt')
 output_file = os.path.join(dir_path, 'out.txt')
 
 input = np.loadtxt(input_file, dtype=float, delimiter=' ')
@@ -16,8 +16,8 @@ output = np.loadtxt(output_file, dtype=float, delimiter=' ')
 input = input[1:]
 
 fig, ax = plt.subplots()
-ax.plot(input, 'b-', label='Input')
-ax.plot(output, 'r-', label='Output')
+ax.plot(input, 'b-', label='Reference')
+ax.plot(output, 'r-', label='Result')
 ax.set_xlabel('Time')
 ax.set_ylabel('Amplitude')
 ax.legend()
