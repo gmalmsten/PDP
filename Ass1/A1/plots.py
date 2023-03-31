@@ -8,12 +8,11 @@ import os
 dir_path = os.getcwd()
 
 # Join the file name to the path
-input_file = os.path.join(dir_path, 'ref_outputs\output96_4_ref.txt')
+input_file = os.path.join(dir_path, 'out.txt')
 output_file = os.path.join(dir_path, 'out4.txt')
 
 input = np.loadtxt(input_file, dtype=float, delimiter=' ')
 output = np.loadtxt(output_file, dtype=float, delimiter=' ')
-input = input[1:]
 
 fig, ax = plt.subplots()
 ax.plot(input, 'b-', label='Reference')
