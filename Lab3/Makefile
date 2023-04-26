@@ -7,7 +7,7 @@ CC = mpicc
 CCFLAGS = -g -std=c99 -O3
 LIBS = -lm
 
-BINS = conti array_sect
+BINS = conti array_sect linalg
 
 all: $(BINS)
 
