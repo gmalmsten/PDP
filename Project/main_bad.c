@@ -11,22 +11,6 @@
 #define T 100
 #define R 15
 
-void print_d_vec(double *vector, int lim){
-    printf("[");
-    for(int i = 0; i < lim; i++){
-        printf("%f, ", vector[i]);
-    }
-    printf("]\n");
-}
-
-void print_i_vec(int *vector, int lim){
-    printf("[");
-    for(int i = 0; i < lim; i++){
-        printf("%d, ", vector[i]);
-    }
-    printf("]\n");
-}
-
 int main(int argc, char *argv[]){
 
     if(argc != 2){
@@ -48,7 +32,7 @@ int main(int argc, char *argv[]){
     const int local_N = N/num_proc;
     
     int X[n*local_N];
-    const int P[m*n] = {1, 0, 0, 0, 0, 0, 0,
+    const int P[m*n] ={1, 0, 0, 0, 0, 0, 0,
                         -1, 0, 0, 0, 0, 0, 0,
                         -1, 0, 1, 0, 0, 0, 0,
                         0, 1, 0, 0, 0, 0, 0,
@@ -64,15 +48,12 @@ int main(int argc, char *argv[]){
                         1, 0, 0, 0, 0, 0, -1,
                         0, 0, 0, 0, 0, 0, -1};
     double w[15];
-    for(int i = 0; i < local_N; i++){
-        srand(time(NULL) + rank*local_N + i);
-        double t = 0;
+    srand(time(NULL));
+    for(int epoch = 0; epoch < local_N; epoch++){
         int x[n] = {900, 900, 30, 330, 50, 270, 20};
+        double t = 0;
         while(t<T){
-            // Compute w 
             prop(x, w);
-
-            // Compute a0
             double a0 = 0;
             for(int i = 0; i < R; i++){
                 a0+=w[i];
@@ -89,14 +70,11 @@ int main(int argc, char *argv[]){
                 printf("]\n");
                 return -3;
             }
-
-            // Generate two random numbers
             double u1 = (double)rand()/RAND_MAX;
             double u2 = (double)rand()/RAND_MAX;
+            printf("a0 %lf u1 %lf, u2 %lf\n",a0, u1, u2);
 
             double tau = -log(u1)/a0;
-
-            // Find r
             double sum = 0;
             double lim = a0*u2;
             int r = 0;
@@ -107,25 +85,27 @@ int main(int argc, char *argv[]){
                     printf("Error: r exceeds the bounds of the w array\n");
                     return -1;
                 }
-            }
-            
-            // Update x
-            for(int i = 0; i < n; i++){
-                x[i] += P[r*n + i];
-                if(x[i]<0){
-                    x[i] = 0;
+                if(sum>a0){
+                    printf("ERROR: sum > a0");
+                    return -1;
                 }
             }
+            
 
-            // Step time
+            for(int i = 0; i < n; i++){
+                printf("r: %d x: %d P[i]: %d ",r, x[i], P[r*n + i]);
+                x[i] += P[r*n + i];
+                printf("x: %d \n", x[i]);
+            }
             t+=tau;
+            // printf("%lf\n", t);
         }
-        for(int j = 0; j < n; j++){
-            X[i*n + j] = x[j];
+        for(int i = 0; i < n; i++){
+            X[epoch*n + i] = x[i];
         }
-    }
         
-   
+    }
+    
     for(int i = 0; i < local_N; i++){
         printf("Rank %d row %d [", rank, i);
         for(int j = 0; j < n; j++){
