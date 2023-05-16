@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
         double t = 0;
         int x[COLS] = {900, 900, 30, 330, 50, 270, 20};
         while(t<T){
-            if(t > T/4 && !timings[0]){
+            if(!timings[0] && t > T/4){
                 sub_times[0] += (MPI_Wtime() - start_time);
                 timings[0] = 1;
             }
