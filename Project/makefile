@@ -4,7 +4,7 @@ LIBS = -lm
 
 CFLAGS = $(CCFLAGS)
 
-BINS = main gillespie
+BINS = mc
 
 .PHONY: clean
 

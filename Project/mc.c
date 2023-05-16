@@ -6,10 +6,9 @@
 #include <unistd.h>
 #include "prop.h"
 
-#define m 15
-#define n 7
+#define ROWS 15
+#define COLS 7
 #define T 100
-#define R 15
 #define b 20
 
 void print_d_vec(double *vector, int lim){
@@ -56,9 +55,9 @@ int main(int argc, char *argv[]){
     }
     
     
-    int X[n*local_N];
+    int X[COLS*local_N];
     int results[local_N];
-    const int P[m*n] = {1, 0, 0, 0, 0, 0, 0,
+    const int P[ROWS*COLS] = {1, 0, 0, 0, 0, 0, 0,
                         -1, 0, 0, 0, 0, 0, 0,
                         -1, 0, 1, 0, 0, 0, 0,
                         0, 1, 0, 0, 0, 0, 0,
@@ -73,29 +72,32 @@ int main(int argc, char *argv[]){
                         0, 0, 0, 0, 0, -1, 0,
                         1, 0, 0, 0, 0, 0, -1,
                         0, 0, 0, 0, 0, 0, -1};
-    double w[15];
-    for(int i = 0; i < local_N; i++){
-        // srand((unsigned int)(rank*local_N + i));
-        srand((unsigned int) time(NULL));
+
+    double start_time = MPI_Wtime();
+    
+    for(int epoch = 0; epoch < local_N; epoch++){
+        srand((unsigned int)(rank*local_N + epoch));
+        // srand((unsigned int) time(NULL));
         // printf("Rank %d: %d\n", rank, rank*local_N + i);
         double t = 0;
-        int x[n] = {900, 900, 30, 330, 50, 270, 20};
+        int x[COLS] = {900, 900, 30, 330, 50, 270, 20};
         while(t<T){
             // Compute w 
+            double w[ROWS];
             prop(x, w);
 
             // Compute a0
             double a0 = 0;
-            for(int i = 0; i < R; i++){
+            for(int i = 0; i < ROWS; i++){
                 a0+=w[i];
             }
             if(a0<0){
                 printf("ERROR a0 < 0\nw: [");
-                for(int i = 0; i < R; i++){
+                for(int i = 0; i < ROWS; i++){
                     printf("%lf ", w[i]);
                 }
                 printf("]\nx: [");
-                for(int i = 0; i < n; i++){
+                for(int i = 0; i < COLS; i++){
                     printf("%d ", x[i]);
                 }
                 printf("]\n");
@@ -109,23 +111,25 @@ int main(int argc, char *argv[]){
             double tau = -log(u1)/a0;
 
             // Find r
-            double sum = 0;
+            double sum_r_prev = 0;
+            double sum_r = w[0];
             double lim = a0*u2;
             int r = 0;
-            while(sum < lim){   //-----------------------------------------------------------//
-                sum += w[r];
+            while(sum_r < lim && sum_r_prev <= lim){   //-----------------------------------------------------------//
                 r++;
-                if(r>R){
+                sum_r += w[r];
+                sum_r_prev = sum_r;
+                if(r>ROWS){
                     printf("Error: r exceeds the bounds of the w array\n");
                     return -1;
                 }
+                
             }
 
-            r--; // 0 indexing
 
             // Update x
-            for(int i = 0; i < n; i++){
-                x[i] += P[r*n + i];
+            for(int i = 0; i < COLS; i++){
+                x[i] += P[r*COLS + i];
                 if(x[i]<0){
                     x[i] = 0;
                     printf("Warning: x[%d] < 0\n", i);
@@ -135,10 +139,10 @@ int main(int argc, char *argv[]){
             // Step time
             t+=tau;
         }
-        for(int j = 0; j < n; j++){
-            X[i*n + j] = x[j];
-        }
-        results[i] = x[0];
+        // for(int j = 0; j < n; j++){
+        //     X[i*n + j] = x[j];
+        // }
+        results[epoch] = x[0];
     }
 
     // Calculate local and global min and max
@@ -160,7 +164,7 @@ int main(int argc, char *argv[]){
     MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
 
-    // Calculate bin size and calculate the local counts in each bin
+    // Calculate bin size and the local counts in each bin
     int bin_size = (global_max - global_min)/b;
     int bins[b];
     for(int i = 0; i < b; i++){
