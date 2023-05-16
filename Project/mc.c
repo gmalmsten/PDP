@@ -58,27 +58,28 @@ int main(int argc, char *argv[]){
     int X[COLS*local_N];
     int results[local_N];
     const int P[ROWS*COLS] = {1, 0, 0, 0, 0, 0, 0,
-                        -1, 0, 0, 0, 0, 0, 0,
-                        -1, 0, 1, 0, 0, 0, 0,
-                        0, 1, 0, 0, 0, 0, 0,
-                        0, -1, 0, 0, 0, 0, 0,
-                        0, -1, 0, 1, 0, 0, 0,
-                        0, 0, -1, 0, 0, 0, 0,
-                        0, 0, -1, 0, 1, 0, 0,
-                        0, 0, 0, -1, 0, 0, 0,
-                        0, 0, 0, -1, 0, 1, 0,
-                        0, 0, 0, 0, -1, 0, 0,
-                        0, 0, 0, 0, -1, 0, 1,
-                        0, 0, 0, 0, 0, -1, 0,
-                        1, 0, 0, 0, 0, 0, -1,
-                        0, 0, 0, 0, 0, 0, -1};
+                            -1, 0, 0, 0, 0, 0, 0,
+                            -1, 0, 1, 0, 0, 0, 0,
+                            0, 1, 0, 0, 0, 0, 0,
+                            0, -1, 0, 0, 0, 0, 0,
+                            0, -1, 0, 1, 0, 0, 0,
+                            0, 0, -1, 0, 0, 0, 0,
+                            0, 0, -1, 0, 1, 0, 0,
+                            0, 0, 0, -1, 0, 0, 0,
+                            0, 0, 0, -1, 0, 1, 0,
+                            0, 0, 0, 0, -1, 0, 0,
+                            0, 0, 0, 0, -1, 0, 1,
+                            0, 0, 0, 0, 0, -1, 0,
+                            1, 0, 0, 0, 0, 0, -1,
+                            0, 0, 0, 0, 0, 0, -1};
+
+    // Seed
+    srand(rank);
 
     double start_time = MPI_Wtime();
-    
     for(int epoch = 0; epoch < local_N; epoch++){
-        srand((unsigned int)(rank*local_N + epoch));
-        // srand((unsigned int) time(NULL));
-        // printf("Rank %d: %d\n", rank, rank*local_N + i);
+        // srand((unsigned int)(rank*local_N + epoch));
+
         double t = 0;
         int x[COLS] = {900, 900, 30, 330, 50, 270, 20};
         while(t<T){
@@ -139,8 +140,8 @@ int main(int argc, char *argv[]){
             // Step time
             t+=tau;
         }
-        // for(int j = 0; j < n; j++){
-        //     X[i*n + j] = x[j];
+        // for(int j = 0; j < COLS; j++){
+        //     X[epoch*COLS + j] = x[j];
         // }
         results[epoch] = x[0];
     }
@@ -186,7 +187,6 @@ int main(int argc, char *argv[]){
     double local_time = MPI_Wtime() - start_time;
     double global_time;
     MPI_Reduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    printf("Rank %d: Time: %lf\n", rank, local_time);
     if(rank == 0)
     {
         printf("Time: %lf\n", global_time);
