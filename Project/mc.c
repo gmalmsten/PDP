@@ -183,8 +183,13 @@ int main(int argc, char *argv[]){
     int global_bins[b];
 
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    double local_time = MPI_Wtime() - start_time;
+    double global_time;
+    MPI_Reduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    printf("Rank %d: Time: %lf\n", rank, local_time);
     if(rank == 0)
     {
+        printf("Time: %lf\n", global_time);
         print_i_vec(global_bins, b);
     }
     MPI_Finalize();
