@@ -75,7 +75,9 @@ int main(int argc, char *argv[]){
                         0, 0, 0, 0, 0, 0, -1};
     double w[15];
     for(int i = 0; i < local_N; i++){
-        srand(rank*local_N + i);
+        // srand((unsigned int)(rank*local_N + i));
+        srand((unsigned int) time(NULL));
+        // printf("Rank %d: %d\n", rank, rank*local_N + i);
         double t = 0;
         int x[n] = {900, 900, 30, 330, 50, 270, 20};
         while(t<T){
