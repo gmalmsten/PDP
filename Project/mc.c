@@ -76,13 +76,28 @@ int main(int argc, char *argv[]){
     // Seed
     srand(rank);
 
+    double sub_times[4] = {0, 0, 0, 0};
+
     double start_time = MPI_Wtime();
     for(int epoch = 0; epoch < local_N; epoch++){
         // srand((unsigned int)(rank*local_N + epoch));
+        char timings[3] = {0, 0, 0};
 
         double t = 0;
         int x[COLS] = {900, 900, 30, 330, 50, 270, 20};
         while(t<T){
+            if(t > T/4 && !timings[0]){
+                sub_times[0] += (MPI_Wtime() - start_time);
+                timings[0] = 1;
+            }
+            if(t > T/2 && !timings[1]){
+                sub_times[1] += (MPI_Wtime() - start_time);
+                timings[1] = 1;
+            }
+            if(t > 3*T/4 && !timings[2]){
+                sub_times[2] += (MPI_Wtime() - start_time);
+                timings[2] = 1;
+            }
             // Compute w 
             double w[ROWS];
             prop(x, w);
@@ -140,10 +155,15 @@ int main(int argc, char *argv[]){
             // Step time
             t+=tau;
         }
+        sub_times[3] += (MPI_Wtime() - start_time);
         // for(int j = 0; j < COLS; j++){
         //     X[epoch*COLS + j] = x[j];
         // }
         results[epoch] = x[0];
+    }
+
+    for(int i = 0; i < 4; i++){
+        sub_times[i] /= local_N;
     }
 
     // Calculate local and global min and max
