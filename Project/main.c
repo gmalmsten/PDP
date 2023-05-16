@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
             for(int i = 0; i < n; i++){
                 x[i] += P[r*n + i];
                 if(x[i]<0){
-                    // x[i] = 0;
+                    x[i] = 0;
                     printf("Warning: x[%d] < 0\n", i);
                 }
             }
