@@ -210,11 +210,32 @@ int main(int argc, char *argv[]){
     int global_bins[b];
 
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Win win;
+    MPI_Win_create(&sub_times, 4*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_fence(0, win);
+    double all_sub_times[4*num_proc];
+    if(rank == 0)
+    for(int p = 0; p<num_proc; p++)
+    {
+        MPI_Get(&all_sub_times[4*p], 4, MPI_DOUBLE, p, 0, 4, MPI_DOUBLE, win);
+    }
+    MPI_Win_fence(0, win);
+    MPI_Win_free(&win);
     double local_time = MPI_Wtime() - start_time;
     double global_time;
     MPI_Reduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Win win;
-    MPI_
+    
+
+    if(rank == 0)
+    {
+        printf("Sub times:\n");
+        printf("Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
+        for(int p = 0; p<num_proc; p++)
+        {
+            printf("%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
+        }
+    }
+
     // printf("Rank %d: %lfs %lfs %lfs %lfs\n", rank, sub_times[0], sub_times[1], sub_times[2], sub_times[3]);
     if(rank == 0)
     {   
