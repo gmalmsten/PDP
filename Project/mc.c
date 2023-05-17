@@ -73,7 +73,10 @@ int main(int argc, char *argv[]){
                             0, 0, 0, 0, 0, 0, -1};
 
     // Seed
-    srand(rank);
+    time_t seed = time(NULL);
+    MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    srand(seed + rank);
+    
 
     double sub_times[4] = {0, 0, 0, 0};
 
@@ -100,6 +103,7 @@ int main(int argc, char *argv[]){
             if(t > 3*T/4 && timing == 2){
                 sub_times[2] += (MPI_Wtime() - sub_start_time);
                 sub_start_time = MPI_Wtime();
+                timing = 3;
             }
             // Compute w 
             double w[ROWS];
@@ -209,9 +213,16 @@ int main(int argc, char *argv[]){
     double local_time = MPI_Wtime() - start_time;
     double global_time;
     MPI_Reduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    printf("Rank %d: %lfs %lfs %lfs %lfs\n", rank, sub_times[0], sub_times[1], sub_times[2], sub_times[3]);
+    MPI_Win win;
+    MPI_
+    // printf("Rank %d: %lfs %lfs %lfs %lfs\n", rank, sub_times[0], sub_times[1], sub_times[2], sub_times[3]);
     if(rank == 0)
-    {
+    {   
+        printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
+        for(int i = 1; i < b; i++)
+        {
+            printf("Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
+        }
         printf("Time: %lf\n", global_time);
         print_i_vec(global_bins, b);
     }
