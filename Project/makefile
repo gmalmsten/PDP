@@ -1,5 +1,5 @@
 CC = mpicc
-CCFLAGS = -g -std=c99 -Ofast 
+CCFLAGS = -g -std=c99 -Ofast -fopt-info-vec
 LIBS = -lm 
 
 CFLAGS = $(CCFLAGS)
