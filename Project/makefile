@@ -10,11 +10,8 @@ BINS = mc
 
 all: $(BINS) 
 
-$(BINS): %: %.c prop.o
-	$(CC) $(CFLAGS) $< prop.o -o $@ $(LIBS)
-
-prop.o: prop.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(BINS): %: %.c 
+	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 clean:
 	$(RM) $(BINS) prop.o

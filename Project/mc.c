@@ -4,14 +4,14 @@
 #include <math.h>
 #include <mpi.h>
 #include <unistd.h>
-#include "prop.h"
+#include "prop.c"
 
 #define ROWS 15
 #define COLS 7
 #define T 100
 #define b 20
 
-#define PRODUCE_OUTPUT
+// #define PRODUCE_OUTPUT
 
 void print_d_vec(double *vector, int lim){
     /*Print a vector consisting of lim doubles*/
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]){
         print_i_vec(global_bins, b);
         #endif
 
-        printf("%lfs\n", global_time);
+        printf("%lf\n", global_time);
     }
 
 

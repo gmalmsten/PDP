@@ -1,0 +1,7 @@
+The code is run by executing the command:
+
+mpirun -np p mc N output_file
+
+where p is the number of processes to run the program, N = n*p is the 
+total amount of monte carlo experiments to run and output_file is the 
+file to write the output to. 
