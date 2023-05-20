@@ -208,30 +208,39 @@ int main(int argc, char *argv[]){
     int bin_size = (global_max - global_min)/b;
     int bins[b] = {0};
 
-
-    // Sort the local results to 
-    qsort(results, local_N, sizeof(int), cmp);
-
-    int bin = 0;    // Current bin
-    for(int i = 0; i < local_N; i++){
-        if(results[i] > global_min + bin_size*(bin+1)){
-            bin++;
-        }
-        if(results[i] > global_min + bin_size*b) // Let last bin contain all elements larger than global_min + 20*bin_size
-        {
-            bins[b-1]++;
-            printf("Adding %d to last bin\n", results[i]);
-
-        }
-        else
-        {
-            bins[bin]++;
-        }
-        if(bin == 19){
-            printf("adding %d to last bin\n", results[i]);
-        }
+    int ranges[2*b];
+    ranges[0] = global_min-1;
+    ranges[1] = global_min + bin_size;
+    for(int bin = 1; bin < b; bin++)
+    {
+        ranges[2*bin] = ranges[2*bin-1];
+        ranges[2*bin+1] = ranges[2*bin] + bin_size;
     }
 
+
+    for(int i = 0; i < local_N; i++)
+    {
+        int value = results[i];
+        for(int bin = 0; bin < b; bin ++)
+        {
+            if(value > ranges[2*bin] && value <= ranges[2*bin+1])
+            {
+                bins[bin]++;
+                if(bin == 19)
+                {
+                    printf("adding %d to last bin\n", results[i]);
+                }
+                break;
+            }
+            if(value >= ranges[2*b-1])
+            {   
+                printf("Adding %d to last bin %d\n", value, ranges[2*b-1]);
+                bins[b-1]++;
+                break;
+            }
+        }
+    }
+    
     // Sum all local results in root process (0)
     int global_bins[b];
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -257,12 +266,10 @@ int main(int argc, char *argv[]){
         // {
         //     printf("%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
         // }
-        printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
-        for(int i = 1; i < b - 1; i++)
+        for(int i = 0; i < b; i++)
         {
-            printf("Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
+            printf("Bin %d (%d %d]\n", i+1, ranges[2*i], ranges[2*i+1]);
         }
-        printf("Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
         print_i_vec(global_bins, b);
         #endif
 

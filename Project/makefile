@@ -4,7 +4,7 @@ LIBS = -lm
 
 CFLAGS = $(CCFLAGS)
 
-BINS = mc mc4 mc_test
+BINS = mc mc4 mc_test mc2
 
 .PHONY: clean
 
