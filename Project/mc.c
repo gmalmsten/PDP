@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
     srand(seed + rank);
 
     
-    int results[local_N];
+    int *results = (int *)malloc(local_N*sizeof(int));
     double sub_times[4] = {0}; 
 
     // Start timer
