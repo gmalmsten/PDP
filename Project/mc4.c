@@ -86,7 +86,6 @@ int main(int argc, char *argv[]){
 
     
     int results[local_N];
-    double sub_times[4] = {0}; 
 
     // Start timer
     double start_time = MPI_Wtime();
@@ -98,23 +97,6 @@ int main(int argc, char *argv[]){
         char timing = 0;  // Current sub time to store, 0 - 25, 1 - 50, 2 - 75, 3 - 100
         double sub_start_time = MPI_Wtime();
         while(t<T){
-            // Store sub times
-            if(timing == 0 && t > T/4){
-                sub_times[0] += (MPI_Wtime() - sub_start_time);
-                sub_start_time = MPI_Wtime();
-                timing = 1;
-            }
-            if(t > T/2 && timing == 1){
-                sub_times[1] += (MPI_Wtime() - sub_start_time);
-                sub_start_time = MPI_Wtime();
-                timing = 2;
-            }
-            if(t > 3*T/4 && timing == 2){
-                sub_times[2] += (MPI_Wtime() - sub_start_time);
-                sub_start_time = MPI_Wtime();
-                timing = 3;
-            }
-
             // Compute w 
             double w[ROWS];
             prop(x, w);
@@ -128,10 +110,6 @@ int main(int argc, char *argv[]){
                 printf("ERROR a0 < 0\n");
                 return -3;
             }
-
-            // Generate two random numbers
-            // double u1 = (double)rand()/RAND_MAX;
-            // double u2 = (double)rand()/RAND_MAX;
 
             double tau = -log(((double)rand()/RAND_MAX))/a0;
 
@@ -160,13 +138,7 @@ int main(int argc, char *argv[]){
             t+=tau;
         }
         // Store sub time and result
-        sub_times[3] += (MPI_Wtime() - sub_start_time);
         results[epoch] = x[0];
-    }
-
-    // Rescale sub_times to mean sub_times
-    for(int i = 0; i < 4; i++){
-        sub_times[i] /= (double)local_N;
     }
 
     // Calculate local and global min and max
@@ -196,7 +168,7 @@ int main(int argc, char *argv[]){
     int bins[b] = {0};
 
 
-    // Sort the local results to 
+    // Sort the local results and count the number of elements in each bin
     qsort(results, local_N, sizeof(int), cmp);
 
     int bin = 0;    // Current bin
@@ -218,28 +190,6 @@ int main(int argc, char *argv[]){
     int global_bins[b];
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-
-    double all_sub_times[4*num_proc];
-    if(rank == 0)
-    {
-        memcpy(all_sub_times, sub_times, 4*sizeof(double));
-    }
-    if(num_proc > 1)
-    {
-    // Gather local sub times in root process
-    MPI_Win win;
-    MPI_Win_create(sub_times, 4*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-    MPI_Win_fence(0, win);
-        
-        if(rank == 0)
-            for(int p = 1; p<num_proc; p++)
-            {
-                MPI_Get(&all_sub_times[4*p], 4, MPI_DOUBLE, p, 0, 4, MPI_DOUBLE, win);
-            }
-    MPI_Win_fence(0, win);
-    MPI_Win_free(&win);
-    }
-
     // Stop timer
     double local_time = MPI_Wtime() - start_time;
     double global_time;
@@ -250,12 +200,6 @@ int main(int argc, char *argv[]){
     if(rank == 0)
     {
         #ifdef PRODUCE_OUTPUT
-        printf("Sub times:\n");
-        printf("Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
-        for(int p = 0; p<num_proc; p++)
-        {
-            printf("%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
-        }
         printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
         for(int i = 1; i < b - 1; i++)
         {

@@ -87,7 +87,10 @@ int main(int argc, char *argv[]){
     
     int results[local_N];
     double sub_times[4] = {0}; 
-
+    double all_sub_times[4*num_proc];
+    MPI_Win win;
+    MPI_Win_create(all_sub_times, 4*num_proc*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_fence(0, win);
     // Start timer
     double start_time = MPI_Wtime();
     for(int epoch = 0; epoch < local_N; epoch++){
@@ -168,7 +171,16 @@ int main(int argc, char *argv[]){
     for(int i = 0; i < 4; i++){
         sub_times[i] /= (double)local_N;
     }
-
+    
+    
+     if(rank == 0)
+    {
+        memcpy(&all_sub_times[0], sub_times, 4*sizeof(double));
+    }
+    else
+    {
+        MPI_Put(sub_times, 4, MPI_DOUBLE, 0, rank * 4, 4, MPI_DOUBLE, win);
+    }
     // Calculate local and global min and max
     int global_min, global_max, local_min, local_max;
 
@@ -218,27 +230,10 @@ int main(int argc, char *argv[]){
     int global_bins[b];
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-
-    double all_sub_times[4*num_proc];
-    if(rank == 0)
-    {
-        memcpy(all_sub_times, sub_times, 4*sizeof(double));
-    }
-    if(num_proc > 1)
-    {
-    // Gather local sub times in root process
-    MPI_Win win;
-    MPI_Win_create(sub_times, 4*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-    MPI_Win_fence(0, win);
-        
-        if(rank == 0)
-            for(int p = 1; p<num_proc; p++)
-            {
-                MPI_Get(&all_sub_times[4*p], 4, MPI_DOUBLE, p, 0, 4, MPI_DOUBLE, win);
-            }
+    // Synchonize all processes
     MPI_Win_fence(0, win);
     MPI_Win_free(&win);
-    }
+    
 
     // Stop timer
     double local_time = MPI_Wtime() - start_time;
@@ -256,13 +251,13 @@ int main(int argc, char *argv[]){
         {
             printf("%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
         }
-        printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
-        for(int i = 1; i < b - 1; i++)
-        {
-            printf("Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
-        }
-        printf("Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
-        print_i_vec(global_bins, b);
+        // printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
+        // for(int i = 1; i < b - 1; i++)
+        // {
+        //     printf("Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
+        // }
+        // printf("Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
+        // print_i_vec(global_bins, b);
         #endif
 
         printf("%lf\n", global_time);

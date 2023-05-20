@@ -4,14 +4,17 @@ LIBS = -lm
 
 CFLAGS = $(CCFLAGS)
 
-BINS = mc
+BINS = mc mc4 mc_test
 
 .PHONY: clean
 
 all: $(BINS) 
 
-$(BINS): %: %.c 
-	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
+$(BINS): %: %.c prop.o
+	$(CC) $(CFLAGS) $< prop.o -o $@ $(LIBS)
+
+prop.o: prop.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	$(RM) $(BINS) prop.o
