@@ -23,13 +23,13 @@ void print_d_vec(double *vector, int lim){
     printf("]\n");
 }
 
-void print_i_vec(int *vector, int lim){
+void print_i_vec(int *vector, int lim, FILE * restrict fp){
     /*Print a vector consisting of lim integers*/
-    printf("[");
+    fprintf(fp, "[");
     for(int i = 0; i < lim - 1; i++){
-        printf("%d, ", vector[i]);
+        fprintf(fp, "%d, ", vector[i]);
     }
-    printf("%d]\n", vector[lim - 1]);
+    fprintf(fp, "%d]\n", vector[lim - 1]);
 }
 
 int cmp (const void *num1, const void *num2) {
@@ -39,13 +39,14 @@ int cmp (const void *num1, const void *num2) {
 
 int main(int argc, char *argv[]){
 
-    if(argc != 2){
+    if(argc != 3){
         printf("Usage %s N\n", argv[0]);
         return -1;
     }
 
     // Arguments 
     const int N = atoi(argv[1]);
+    const char *output_file = argv[2];
     int rank, num_proc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -202,7 +203,6 @@ int main(int argc, char *argv[]){
     MPI_Allreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-    if(rank == 0) printf("Min %d Max %d\n", global_min, global_max);
 
     // Calculate bin size and the local counts in each bin
     int bin_size = (global_max - global_min)/b;
@@ -220,16 +220,12 @@ int main(int argc, char *argv[]){
         if(results[i] > global_min + bin_size*b) // Let last bin contain all elements larger than global_min + 20*bin_size
         {
             bins[b-1]++;
-            printf("Adding %d to last bin\n", results[i]);
-
         }
         else
         {
             bins[bin]++;
         }
-        if(bin == 19){
-            printf("adding %d to last bin\n", results[i]);
-        }
+        
     }
 
     // Sum all local results in root process (0)
@@ -251,19 +247,23 @@ int main(int argc, char *argv[]){
     if(rank == 0)
     {
         #ifdef PRODUCE_OUTPUT
-        // printf("Sub times:\n");
-        // printf("Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
-        // for(int p = 0; p<num_proc; p++)
-        // {
-        //     printf("%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
-        // }
-        printf("Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
+        FILE *fp;
+        fp = fopen("output.txt", "w");
+
+        fprintf(fp, "Sub times:\n");
+        fprintf(fp, "Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
+        for(int p = 0; p<num_proc; p++)
+        {
+            fprintf(fp, "%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
+        }
+        fprintf(fp, "Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
         for(int i = 1; i < b - 1; i++)
         {
-            printf("Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
+            fprintf(fp, "Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
         }
-        printf("Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
-        print_i_vec(global_bins, b);
+        fprintf(fp, "Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
+        print_i_vec(global_bins, b, fp);
+        fclose(fp);
         #endif
 
         printf("%lf\n", global_time);
