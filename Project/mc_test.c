@@ -39,14 +39,15 @@ int cmp (const void *num1, const void *num2) {
 
 int main(int argc, char *argv[]){
 
-    if(argc != 3){
-        printf("Usage %s N\n", argv[0]);
+    if(argc != 2){
+        printf("Usage %s N output_file\n", argv[0]);
         return -1;
     }
 
     // Arguments 
     const int N = atoi(argv[1]);
     const char *output_file = argv[2];
+    
     int rank, num_proc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

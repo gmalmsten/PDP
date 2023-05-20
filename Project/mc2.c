@@ -12,7 +12,7 @@
 #define T 100
 #define b 20
 
-#define PRODUCE_OUTPUT
+// #define PRODUCE_OUTPUT
 
 void print_d_vec(double *vector, int lim){
     /*Print a vector consisting of lim doubles*/
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]){
         ranges[2*bin] = ranges[2*bin-1];
         ranges[2*bin+1] = ranges[2*bin] + bin_size;
     }
-
+    ranges[2*b-1] = global_max;
 
     for(int i = 0; i < local_N; i++)
     {
@@ -226,18 +226,9 @@ int main(int argc, char *argv[]){
             if(value > ranges[2*bin] && value <= ranges[2*bin+1])
             {
                 bins[bin]++;
-                if(bin == 19)
-                {
-                    printf("adding %d to last bin\n", results[i]);
-                }
                 break;
             }
-            if(value >= ranges[2*b-1])
-            {   
-                printf("Adding %d to last bin %d\n", value, ranges[2*b-1]);
-                bins[b-1]++;
-                break;
-            }
+           
         }
     }
     
