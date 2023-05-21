@@ -40,12 +40,13 @@ int cmp (const void *num1, const void *num2) {
 int main(int argc, char *argv[]){
 
     if(argc != 2){
-        printf("Usage %s N\n", argv[0]);
+        printf("Usage %s N output_file\n", argv[0]);
         return -1;
     }
 
     // Arguments 
     const int N = atoi(argv[1]);
+    
     int rank, num_proc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -202,7 +203,6 @@ int main(int argc, char *argv[]){
     MPI_Allreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-    if(rank == 0) printf("Min %d Max %d\n", global_min, global_max);
 
     // Calculate bin size and the local counts in each bin
     int bin_size = (global_max - global_min)/b;
@@ -220,15 +220,12 @@ int main(int argc, char *argv[]){
         if(results[i] > global_min + bin_size*b) // Let last bin contain all elements larger than global_min + 20*bin_size
         {
             bins[b-1]++;
-            printf("Adding %d to last bin\n", results[i]);
-
         }
         else
         {
             bins[bin]++;
         }
         if(bin == 19){
-            printf("adding %d to last bin\n", results[i]);
         }
     }
 
