@@ -37,9 +37,19 @@ int cmp (const void *num1, const void *num2) {
    return ( *(int*)num1 > *(int*)num2 );
 }
 
+void print_i_vec_term(int *vector,int lim)
+{
+    /*Print a vector consisting of lim integers*/
+    printf("[");
+    for(int i = 0; i < lim - 1; i++){
+        printf("%d, ", vector[i]);
+    }
+    printf("%d]\n", vector[lim - 1]);
+}
+
 int main(int argc, char *argv[]){
 
-    if(argc != 2){
+    if(argc != 3){
         printf("Usage %s N output_file\n", argv[0]);
         return -1;
     }
@@ -81,8 +91,8 @@ int main(int argc, char *argv[]){
                             0, 0, 0, 0, 0, 0, -1};
 
     // Seed
-    // time_t seed = time(NULL);
-    int seed = 1;
+    time_t seed = time(NULL);
+    // int seed = 1;
     MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
     srand(seed + rank);
 
@@ -204,6 +214,8 @@ int main(int argc, char *argv[]){
     MPI_Allreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
+    // Close RMA window (Processes are synched following above blocking call)
+    MPI_Win_free(&win);
 
     // Calculate bin size and the local counts in each bin
     int bin_size = (global_max - global_min)/b;
@@ -225,18 +237,13 @@ int main(int argc, char *argv[]){
         else
         {
             bins[bin]++;
-        }
-        
+        }  
     }
 
     // Sum all local results in root process (0)
     int global_bins[b];
     MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    // Synchonize all processes
-    MPI_Win_fence(0, win);
-    MPI_Win_free(&win);
-    
 
     // Stop timer
     double local_time = MPI_Wtime() - start_time;
@@ -249,7 +256,7 @@ int main(int argc, char *argv[]){
     {
         #ifdef PRODUCE_OUTPUT
         FILE *fp;
-        fp = fopen("output.txt", "w");
+        fp = fopen(output_file, "w");
 
         fprintf(fp, "Sub times:\n");
         fprintf(fp, "Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
