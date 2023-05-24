@@ -121,12 +121,12 @@ int main(int argc, char *argv[]){
                 sub_start_time = MPI_Wtime();
                 timing = 1;
             }
-            if(t > T/2 && timing == 1){
+            if(timing == 1 && t > T/2){
                 sub_times[1] += (MPI_Wtime() - sub_start_time);
                 sub_start_time = MPI_Wtime();
                 timing = 2;
             }
-            if(t > 3*T/4 && timing == 2){
+            if(timing == 2 && t > 3*T/4){
                 sub_times[2] += (MPI_Wtime() - sub_start_time);
                 sub_start_time = MPI_Wtime();
                 timing = 3;
