@@ -8,4 +8,6 @@ file to write the output to.
 
 The output consists of a table of the timings for the sub intervals followed
 by the ranges of the histogram as well as the ranges for all of the bins. 
-Lastly, the counts of each bin is presented as a vector,
+Lastly, the counts of each bin is presented as a vector. 
+
+After the output file is produced, the largest execution time is written to the terminal
