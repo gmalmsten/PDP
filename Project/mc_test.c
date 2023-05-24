@@ -3,7 +3,6 @@
 #include <time.h>
 #include <math.h>
 #include <mpi.h>
-#include <unistd.h>
 #include "prop.h"
 #include <string.h>
 
@@ -101,8 +100,11 @@ int main(int argc, char *argv[]){
     double sub_times[4] = {0}; 
     double all_sub_times[4*num_proc];
     MPI_Win win;
-    MPI_Win_create(all_sub_times, 4*num_proc*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-    MPI_Win_fence(0, win);
+    if(num_proc > 1)
+    {
+        MPI_Win_create(all_sub_times, 4*num_proc*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+        MPI_Win_fence(0, win);
+    }
     // Start timer
     double start_time = MPI_Wtime();
     for(int epoch = 0; epoch < local_N; epoch++){
@@ -215,6 +217,7 @@ int main(int argc, char *argv[]){
     MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
     // Close RMA window (Processes are synched following above blocking call)
+    if(num_proc>1)
     MPI_Win_free(&win);
 
     // Calculate bin size and the local counts in each bin

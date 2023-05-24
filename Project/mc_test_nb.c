@@ -3,7 +3,6 @@
 #include <time.h>
 #include <math.h>
 #include <mpi.h>
-#include <unistd.h>
 #include "prop.h"
 #include <string.h>
 
@@ -37,6 +36,16 @@ int cmp (const void *num1, const void *num2) {
    return ( *(int*)num1 > *(int*)num2 );
 }
 
+void print_i_vec_term(int *vector,int lim)
+{
+    /*Print a vector consisting of lim integers*/
+    printf("[");
+    for(int i = 0; i < lim - 1; i++){
+        printf("%d, ", vector[i]);
+    }
+    printf("%d]\n", vector[lim - 1]);
+}
+
 int main(int argc, char *argv[]){
 
     if(argc != 3){
@@ -47,6 +56,7 @@ int main(int argc, char *argv[]){
     // Arguments 
     const int N = atoi(argv[1]);
     const char *output_file = argv[2];
+    
     int rank, num_proc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -80,15 +90,21 @@ int main(int argc, char *argv[]){
                             0, 0, 0, 0, 0, 0, -1};
 
     // Seed
-    // time_t seed = time(NULL);
-    int seed = 1;
+    time_t seed = time(NULL);
+    // int seed = 1;
     MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
     srand(seed + rank);
 
     
-    int *results = (int *)malloc(local_N*sizeof(int));
+    int results[local_N];
     double sub_times[4] = {0}; 
-
+    double all_sub_times[4*num_proc];
+    MPI_Win win;
+    if(num_proc > 1)
+    {
+        MPI_Win_create(all_sub_times, 4*num_proc*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+        MPI_Win_fence(0, win);
+    }
     // Start timer
     double start_time = MPI_Wtime();
     for(int epoch = 0; epoch < local_N; epoch++){
@@ -170,6 +186,15 @@ int main(int argc, char *argv[]){
         sub_times[i] /= (double)local_N;
     }
 
+    // Put the sub timings in the root process memory
+    if(rank == 0)
+    {
+        memcpy(&all_sub_times[0], sub_times, 4*sizeof(double));
+    }
+    else
+    {
+        MPI_Put(sub_times, 4, MPI_DOUBLE, 0, rank * 4, 4, MPI_DOUBLE, win);
+    }
     // Calculate local and global min and max
     int global_min, global_max, local_min, local_max;
 
@@ -186,23 +211,25 @@ int main(int argc, char *argv[]){
         }
     }
 
+    MPI_Request min_max_requests[2];
 
     // Reduce and broadcast global min and max to all processes
-    MPI_Request min_max_request[2];
-    MPI_Iallreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD, &min_max_request[0]);
-    MPI_Iallreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD, &min_max_request[1]);
+    MPI_Iallreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD, &min_max_requests[0]);
+    MPI_Iallreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD, &min_max_requests[1]);
 
-    // Sort the local results while waiting for reduction to finish
+    // Sort the local results while waiting for reduction to complete
     qsort(results, local_N, sizeof(int), cmp);
 
-    MPI_Waitall(2, min_max_request, MPI_STATUSES_IGNORE);
+    // Wait for reduction to complete
+    MPI_Waitall(2, min_max_requests, MPI_STATUSES_IGNORE);
+
+    // Close RMA window (Processes are synched following above blocking call)
+    if(num_proc>1)
+    MPI_Win_free(&win);
 
     // Calculate bin size and the local counts in each bin
     int bin_size = (global_max - global_min)/b;
     int bins[b] = {0};
-
-
-    
 
     int bin = 0;    // Current bin
     for(int i = 0; i < local_N; i++){
@@ -216,39 +243,13 @@ int main(int argc, char *argv[]){
         else
         {
             bins[bin]++;
-        }
+        }  
     }
-
 
     // Sum all local results in root process (0)
-    MPI_Request result_request;
     int global_bins[b];
-    MPI_Ireduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD, &result_request);
+    MPI_Reduce(bins, global_bins, b, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-
-    double all_sub_times[4*num_proc];
-    if(rank == 0)
-    {
-        memcpy(all_sub_times, sub_times, 4*sizeof(double));
-    }
-    if(num_proc > 1)
-    {
-    // Gather local sub times in root process
-    MPI_Win win;
-    MPI_Win_create(sub_times, 4*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-    MPI_Win_fence(0, win);
-        
-        if(rank == 0)
-            for(int p = 1; p<num_proc; p++)
-            {
-                MPI_Get(&all_sub_times[4*p], 4, MPI_DOUBLE, p, 0, 4, MPI_DOUBLE, win);
-            }
-    MPI_Win_fence(0, win);
-    MPI_Win_free(&win);
-    }
-
-    // Wait for reduction to finish
-    MPI_Wait(&result_request, MPI_STATUS_IGNORE);
 
     // Stop timer
     double local_time = MPI_Wtime() - start_time;
@@ -260,8 +261,9 @@ int main(int argc, char *argv[]){
     if(rank == 0)
     {
         #ifdef PRODUCE_OUTPUT
-        FILE * fp;
-        fp = fopen("output.txt", "w");
+        FILE *fp;
+        fp = fopen(output_file, "w");
+
         fprintf(fp, "Sub times:\n");
         fprintf(fp, "Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
         for(int p = 0; p<num_proc; p++)
