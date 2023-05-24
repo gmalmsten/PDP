@@ -3,5 +3,9 @@ The code is run by executing the command:
 mpirun -np p mc N output_file
 
 where p is the number of processes to run the program, N = n*p is the 
-total amount of monte carlo experiments to run and output_file is the 
+total amount of Monte Carlo experiments to conduct and output_file is the 
 file to write the output to. 
+
+The output consists of a table of the timings for the sub intervals followed
+by the ranges of the histogram as well as the ranges for all of the bins. 
+Lastly, the counts of each bin is presented as a vector,

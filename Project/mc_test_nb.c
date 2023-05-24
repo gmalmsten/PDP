@@ -264,18 +264,21 @@ int main(int argc, char *argv[]){
         FILE *fp;
         fp = fopen(output_file, "w");
 
-        fprintf(fp, "Sub times:\n");
-        fprintf(fp, "Process\t25%%\t\t50%%\t\t75%%\t\t100%%\n");
+        fprintf(fp, "Sub-timings:\n");
+        fprintf(fp, "Process\t[0, 25]\t\t(25, 50]\t(50, 75]\t(75, 100]\n");
         for(int p = 0; p<num_proc; p++)
         {
-            fprintf(fp, "%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
+            fprintf(fp, "\t%d\t%lf\t%lf\t%lf\t%lf\n", p, all_sub_times[4*p], all_sub_times[4*p+1], all_sub_times[4*p+2], all_sub_times[4*p+3]);
         }
+        fprintf(fp, "\nRange of histogram: [%d, %d]\n", global_min, global_max);
+        fprintf(fp, "Bins:\n");
         fprintf(fp, "Bin %d [%d %d]\n", 1, global_min, global_min + bin_size);
         for(int i = 1; i < b - 1; i++)
         {
             fprintf(fp, "Bin %d (%d %d]\n", i+1, global_min + bin_size*i, global_min + bin_size*(i + 1));
         }
         fprintf(fp, "Bin %d (%d %d]\n", 20, global_min + bin_size*19, global_max);
+        fprintf(fp, "Counts:\n");
         print_i_vec(global_bins, b, fp);
         fclose(fp);
         #endif
