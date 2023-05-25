@@ -6,6 +6,7 @@
 #include "prop.h"
 #include <string.h>
 
+// Define macros
 #define ROWS 15
 #define COLS 7
 #define T 100
@@ -13,14 +14,6 @@
 
 #define PRODUCE_OUTPUT
 
-void print_d_vec(double *vector, int lim){
-    /*Print a vector consisting of lim doubles*/
-    printf("[");
-    for(int i = 0; i < lim; i++){
-        printf("%lf, ", vector[i]);
-    }
-    printf("]\n");
-}
 
 void print_i_vec(int *vector, int lim, FILE * restrict fp){
     /*Print a vector consisting of lim integers*/
@@ -57,6 +50,7 @@ int main(int argc, char *argv[]){
     const int N = atoi(argv[1]);
     const char *output_file = argv[2];
     
+    // Initialize MPI
     int rank, num_proc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -70,7 +64,6 @@ int main(int argc, char *argv[]){
             return -2;
         }
     }
-    
     
     // Transition matrix
     const int P[ROWS*COLS] = {1, 0, 0, 0, 0, 0, 0,
@@ -90,21 +83,25 @@ int main(int argc, char *argv[]){
                             0, 0, 0, 0, 0, 0, -1};
 
     // Seed
-    time_t seed = time(NULL);
-    // int seed = 1;
-    MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // Uncomment for new seed each run
+    // time_t seed = time(NULL);
+    // MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    const int seed = 1;
     srand(seed + rank);
-
     
-    int results[local_N];
+    // Initialize variables
+    int *results = (int *)malloc(local_N*sizeof(int));
     double sub_times[4] = {0}; 
     double all_sub_times[4*num_proc];
+
+    // Initialize window
     MPI_Win win;
     if(num_proc > 1)
     {
         MPI_Win_create(all_sub_times, 4*num_proc*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
         MPI_Win_fence(0, win);
     }
+
     // Start timer
     double start_time = MPI_Wtime();
     for(int epoch = 0; epoch < local_N; epoch++){
@@ -112,10 +109,10 @@ int main(int argc, char *argv[]){
         double t = 0;
         int x[COLS] = {900, 900, 30, 330, 50, 270, 20};
 
-        char timing = 0;  // Current sub time to store, 0 - 25, 1 - 50, 2 - 75, 3 - 100
+        char timing = 0;  // Current sub time to store, 0 - [0,25], 1 - (25, 50], 2 - (50, 75], 3 - (75, 100]
         double sub_start_time = MPI_Wtime();
         while(t<T){
-            // Store sub times
+            // Accumulate sub times
             if(timing == 0 && t > T/4){
                 sub_times[0] += (MPI_Wtime() - sub_start_time);
                 sub_start_time = MPI_Wtime();
@@ -141,15 +138,9 @@ int main(int argc, char *argv[]){
             for(int i = 0; i < ROWS; i++){
                 a0+=w[i];
             }
-            if(a0<0){
-                printf("ERROR a0 < 0\n");
-                return -3;
-            }
+        
 
-            // Generate two random numbers
-            // double u1 = (double)rand()/RAND_MAX;
-            // double u2 = (double)rand()/RAND_MAX;
-
+            // Calculate next time step
             double tau = -log(((double)rand()/RAND_MAX))/a0;
 
             // Find r
@@ -181,10 +172,12 @@ int main(int argc, char *argv[]){
         results[epoch] = x[0];
     }
 
+
     // Rescale sub_times to mean sub_times
     for(int i = 0; i < 4; i++){
         sub_times[i] /= (double)local_N;
     }
+
 
     // Put the sub timings in the root process memory
     if(rank == 0)
@@ -195,11 +188,13 @@ int main(int argc, char *argv[]){
     {
         MPI_Put(sub_times, 4, MPI_DOUBLE, 0, rank * 4, 4, MPI_DOUBLE, win);
     }
+
+
     // Calculate local and global min and max
     int global_min, global_max, local_min, local_max;
-
     local_min = results[0];
     local_max = results[0];
+
     for(int i = 1; i < local_N; i++)
     {
         int tmp = results[i];
@@ -211,9 +206,9 @@ int main(int argc, char *argv[]){
         }
     }
 
-    MPI_Request min_max_requests[2];
-
+    
     // Reduce and broadcast global min and max to all processes
+    MPI_Request min_max_requests[2];
     MPI_Iallreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD, &min_max_requests[0]);
     MPI_Iallreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD, &min_max_requests[1]);
 
@@ -245,6 +240,7 @@ int main(int argc, char *argv[]){
             bins[bin]++;
         }  
     }
+    free(results);
 
     // Sum all local results in root process (0)
     int global_bins[b];
